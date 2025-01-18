@@ -26,8 +26,13 @@ import {
 } from "@mdxeditor/editor";
 import "@mdxeditor/editor/style.css";
 import { useEffect, useState } from "react";
-import { createFile, editFile, getFile } from "../services";
-import { Plus } from "lucide-react";
+import {
+  createFile,
+  editFile,
+  getFile,
+  triggerFileDownload,
+} from "../services";
+import { Plus, Printer, Save, Undo2 } from "lucide-react";
 import { useSearchParams } from "react-router";
 import { toast } from "react-toastify";
 import PacmanLoader from "react-spinners/PacmanLoader";
@@ -36,11 +41,13 @@ function App() {
   const [markdown, setMarkdown] = useState("");
   const [loading, setLoading] = useState(false);
   const [searchParams, setSearchParams] = useSearchParams();
+  const [fileName, setFileName] = useState("");
 
   useEffect(() => {
     const fetchFile = async () => {
       const data = await getFile(searchParams.get("editing") ?? "");
       setMarkdown(data.markdown ?? "");
+      setFileName(data.name);
       setLoading(false);
     };
 
@@ -128,23 +135,55 @@ function App() {
         ]}
         contentEditableClassName="prose max-w-full text-left min-h-[300px] p-4 px-12"
       />
-      <div
-        onClick={async () => {
-          const id = searchParams.get("editing");
-          if (id === null) {
+      {fileName !== "" ? (
+        <div className="absolute bottom-5 ml-5 opacity-50">
+          {"Currently editing: " + fileName}
+        </div>
+      ) : (
+        <div></div>
+      )}
+      <div className="absolute bottom-5 right-5 flex gap-3">
+        <div
+          onClick={async () => triggerFileDownload(markdown)}
+          className="rounded-md bg-slate-600 text-white p-3 hover:bg-slate-900 cursor-pointer"
+        >
+          <Printer></Printer>
+        </div>
+        <div
+          // TODO: CLEAR BUTTON FUNCTIONALITY
+          onClick={async () => {
             setLoading(true);
-            const parent = await createFile(markdown);
+            const folder = searchParams.get("folder");
+            await setSearchParams(folder ? { folder } : new URLSearchParams());
             setMarkdown("");
             setLoading(false);
-            toast(`Your note was created in ${parent.parent}!`);
-          } else {
-            editFile(id, markdown);
-            toast("Your note was edited!");
-          }
-        }}
-        className="absolute bottom-5 right-5 rounded-md bg-slate-600 text-white p-3 hover:bg-slate-900 cursor-pointer"
-      >
-        <Plus />
+            toast(`Note cleared!`);
+          }}
+          className="rounded-md bg-slate-600 text-white p-3 hover:bg-slate-900 cursor-pointer"
+        >
+          <Undo2></Undo2>
+        </div>
+        <div
+          onClick={async () => {
+            const id = searchParams.get("editing");
+            if (id === null) {
+              setLoading(true);
+              const parent = await createFile(markdown);
+              setMarkdown("");
+              setLoading(false);
+              toast(`Your note was created in ${parent.parent}!`);
+            } else {
+              setLoading(true);
+              await editFile(id, markdown);
+              setLoading(false);
+              setSearchParams({});
+              toast("Your note was successfully edited!");
+            }
+          }}
+          className="rounded-md bg-slate-600 text-white p-3 hover:bg-slate-900 cursor-pointer"
+        >
+          {searchParams.get("editing") === null ? <Plus /> : <Save />}
+        </div>
       </div>
     </div>
   );

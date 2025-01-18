@@ -70,3 +70,21 @@ export async function getFile(id: string): Promise<AdhdFile> {
 
   return await response.json();
 }
+
+export async function triggerFileDownload(markdown: string) {
+  const pdfResponse = await fetch("http://localhost:5000/convert-to-pdf", {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify({ markdown: markdown }),
+  });
+  // return file to user?
+  const pdfBlob = await pdfResponse.blob();
+  const downloadUrl = URL.createObjectURL(pdfBlob);
+  const a = document.createElement("a");
+  a.href = downloadUrl;
+  a.download = "converted_file.pdf";
+  document.body.appendChild(a);
+  a.click();
+}

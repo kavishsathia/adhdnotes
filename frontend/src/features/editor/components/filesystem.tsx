@@ -5,6 +5,7 @@ import Card from "./card";
 import { createFolder, getFile, getFiles } from "../services";
 import { ArrowLeft, Folder, Plus } from "lucide-react";
 import { useSearchParams } from "react-router";
+import { PacmanLoader } from "react-spinners";
 
 function App() {
   const [notes, setNotes] = useState<AdhdFile[]>([]);
@@ -12,9 +13,11 @@ function App() {
   const [name, setName] = useState<string>("");
   const [search, setSearch] = useState<string>("");
   const [searchParams, setSearchParams] = useSearchParams();
+  const [loading, setLoading] = useState(false);
 
   useEffect(() => {
     const fetchFiles = async () => {
+      setLoading(true);
       console.log(searchParams.get("folder"));
       const data = await getFiles(searchParams.get("folder"));
 
@@ -33,10 +36,19 @@ function App() {
       }
 
       setNotes(data);
+      setLoading(false);
     };
 
     fetchFiles();
-  }, [searchParams]);
+  }, [searchParams.get("folder")]);
+
+  if (loading) {
+    return (
+      <div className="h-full w-full flex items-center justify-center">
+        <PacmanLoader />
+      </div>
+    );
+  }
 
   return (
     <div>
@@ -70,7 +82,7 @@ function App() {
               focus:ring-blue-500 focus:border-blue-500 block 
               w-full p-2.5 dark:placeholder-gray-400
               dark:focus:ring-blue-500"
-              placeholder="John"
+              placeholder="Search for a file in this directory..."
               required
             />
             <div
@@ -94,7 +106,7 @@ function App() {
            focus:ring-blue-500 focus:border-blue-500 block 
            w-full p-2.5 dark:placeholder-gray-400
            dark:focus:ring-blue-500"
-          placeholder="John"
+          placeholder="Search for a file in this directory..."
           required
         />
         <div

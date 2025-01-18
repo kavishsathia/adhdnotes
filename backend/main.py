@@ -4,15 +4,20 @@ import uuid
 from dotenv import load_dotenv
 import psycopg2
 import asyncio
-from flask import Flask, request, flash
+from flask import Flask, request, flash, send_file
 from flask import request
 from flask_cors import CORS
 import openai
+import threading
+from markdown_pdf import MarkdownPdf, Section
+import telebot
 
 load_dotenv()
 
 app = Flask(__name__)
 CORS(app)
+
+bot = telebot.TeleBot(os.environ["BOT_TOKEN"], parse_mode=None)
 
 
 def get_db(): return psycopg2.connect(user=os.environ['RDS_USER'], password=os.environ['RDS_PASSWORD'],
@@ -155,6 +160,118 @@ def create_folder():
             return {
                 "success": True
             }
+
+
+@bot.message_handler(func=lambda x: True, content_types=['photo', 'text'])
+def send_welcome(telemessage):
+    with get_db() as db:
+        with db.cursor() as cursor:
+            if telemessage.photo and len(telemessage.photo):
+                url = bot.get_file_url(telemessage.photo[-1].file_id)
+                content = requests.get(url).content
+
+                client = openai.Client()
+                response = client.chat.completions.create(
+                    model="gpt-4o",
+                    messages=[
+                        {
+                            "role": "user",
+                            "content": [
+                                {"type": "text", "text": "Describe this image. Extract all the text out of it. If there is no text, describe the image."},
+                                {
+                                    "type": "image_url",
+                                    "image_url": {
+                                        "url": f"data:image/jpeg;base64,{base64.b64encode(content).decode('utf-8')}",
+                                    },
+                                },
+                            ],
+                        }
+                    ],
+                    max_tokens=300,
+                )
+
+                text = response.choices[0].message.content
+
+                response = client.chat.completions.create(
+                    model="gpt-4o-mini",
+                    messages=[
+                        {
+                            "role": "user",
+                            "content": f"""
+                                Give the following text a succint title.
+
+                                Text: {text}
+
+                                You must return a JSON object like this: {{ "title": "" }}
+                            """
+                        }
+                    ],
+                    response_format={"type": "json_object"}
+                )
+
+                embedding_response = client.embeddings.create(
+                    model="text-embedding-ada-002",
+                    input=text
+                )
+
+                cursor.execute("""
+                    SELECT id, name FROM File WHERE markdown IS NULL ORDER BY embedding <-> %s LIMIT 1
+                """, (json.dumps(embedding_response.data[0].embedding),))
+
+                parent = cursor.fetchall()
+
+                cursor.execute("""
+                    INSERT INTO File VALUES (%s, %s, %s, %s, %s) 
+                """, (str(uuid.uuid4()), json.loads(response.choices[0].message.content)["title"], text, parent[0][0] if len(parent) else None, embedding_response.data[0].embedding))
+
+                return bot.reply_to(telemessage, "Your note was added to " + (parent[0][1] if len(parent) else "Home"))
+            else:
+                client = openai.Client()
+                response = client.chat.completions.create(
+                    model="gpt-4o-mini",
+                    messages=[
+                        {
+                            "role": "user",
+                            "content": f"""
+                                Give the following text a succint title.
+
+                                Text: {telemessage.text}
+
+                                You must return a JSON object like this: {{ "title": "" }}
+                            """
+                        }
+                    ],
+                    response_format={"type": "json_object"}
+                )
+
+                embedding_response = client.embeddings.create(
+                    model="text-embedding-ada-002",
+                    input=telemessage.text
+                )
+
+                cursor.execute("""
+                    SELECT id, name FROM File WHERE markdown IS NULL ORDER BY embedding <-> %s LIMIT 1
+                """, (json.dumps(embedding_response.data[0].embedding),))
+
+                parent = cursor.fetchall()
+
+                cursor.execute("""
+                    INSERT INTO File VALUES (%s, %s, %s, %s, %s) 
+                """, (str(uuid.uuid4()), json.loads(response.choices[0].message.content)["title"], telemessage.text, parent[0][0] if len(parent) else None, embedding_response.data[0].embedding))
+
+                return bot.reply_to(telemessage, "Your note was added to " + (parent[0][1] if len(parent) else "Home"))
+
+
+@app.route("/convert-to-pdf", methods=['POST'])
+def convert_to_pdf():
+    try:
+        markdown = request.json['markdown']
+        pdf = MarkdownPdf(toc_level=2)
+        pdf.add_section(Section(markdown, toc=False))
+        pdf.save("result.pdf")
+        return send_file('./result.pdf')
+    except Exception as e:
+        return {"error": str(e)}, 500
 
 
 if __name__ == '__main__':
