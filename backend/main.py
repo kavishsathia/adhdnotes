@@ -11,6 +11,8 @@ import openai
 import threading
 from markdown_pdf import MarkdownPdf, Section
 import telebot
+import requests
+import base64
 
 load_dotenv()
 
@@ -230,6 +232,7 @@ def create_folder():
 
 @bot.message_handler(func=lambda x: True, content_types=['photo', 'text'])
 def send_welcome(telemessage):
+    print(telemessage)
     with get_db() as db:
         with db.cursor() as cursor:
             if telemessage.photo and len(telemessage.photo):
@@ -341,5 +344,7 @@ def convert_to_pdf():
 
 
 if __name__ == '__main__':
-    port = os.environ.get("PORT", 8080)
+    port = os.environ.get("PORT", 80)
+    t = threading.Thread(target=bot.infinity_polling, daemon=True)
+    t.start()
     app.run(host='0.0.0.0', port=port, debug=False)

@@ -59,7 +59,7 @@ export async function getFiles(id: string | null): Promise<AdhdFile[]> {
 
 export async function getFile(id: string): Promise<AdhdFile> {
   if (id === "") {
-    return { markdown: "" };
+    return { id: "", markdown: "", parentId: "", name: "Home" };
   }
   const response = await fetch(`http://localhost:8080/file/${id}`, {
     method: "GET",

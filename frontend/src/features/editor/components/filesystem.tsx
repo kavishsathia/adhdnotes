@@ -9,7 +9,7 @@ import { PacmanLoader } from "react-spinners";
 
 function App() {
   const [notes, setNotes] = useState<AdhdFile[]>([]);
-  const [folder, setFolder] = useState<AdhdFile>();
+  const [folder, setFolder] = useState<AdhdFile | null>();
   const [name, setName] = useState<string>("");
   const [search, setSearch] = useState<string>("");
   const [searchParams, setSearchParams] = useSearchParams();
@@ -57,7 +57,9 @@ function App() {
           const elem = document.getElementById("name_modal");
 
           if (elem) {
-            document.getElementById("name_modal")?.close();
+            (
+              document.getElementById("name_modal") as HTMLDialogElement
+            )?.close();
             elem.style.display = "none";
           }
         }}
@@ -88,7 +90,9 @@ function App() {
             <div
               onClick={async () => {
                 await createFolder(name, searchParams.get("folder") ?? null);
-                document.getElementById("name_modal")?.close();
+                (
+                  document.getElementById("name_modal") as HTMLDialogElement
+                )?.close();
               }}
               className="rounded-md bg-slate-600 text-white p-3 hover:bg-slate-900 cursor-pointer"
             >
@@ -114,7 +118,9 @@ function App() {
             const elem = document.getElementById("name_modal");
 
             if (elem) {
-              document.getElementById("name_modal")?.show();
+              (
+                document.getElementById("name_modal") as HTMLDialogElement
+              )?.show();
               elem.style.display = "flex";
             }
           }}

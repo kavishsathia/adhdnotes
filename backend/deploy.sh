@@ -1,0 +1,2 @@
+DOCKER_DEFAULT_PLATFORM="linux/amd64" docker build -t adhdnotes .
+aws lightsail push-container-image --region ap-southeast-1 --service-name adhdnotes --label backend --image adhdnotes:latest --profile personal
