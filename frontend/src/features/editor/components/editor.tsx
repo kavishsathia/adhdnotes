@@ -54,7 +54,7 @@ function App() {
 
     setLoading(true);
     fetchFile();
-  }, [searchParams]);
+  }, [searchParams.get("editing")]);
 
   const languages = {
     js: "JavaScript",
