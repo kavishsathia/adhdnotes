@@ -41,3 +41,22 @@
 .read-the-docs {
   color: #888;
 }
+
+ul {
+  list-style-type: circle;
+  list-style-position: inside;
+}
+
+ol {
+  list-style-type: upper-alpha;
+  list-style-position: inside;
+}
+
+li[role="checkbox"] {
+  margin-left: 0;
+}
+
+li[role="checkbox"]::before,
+li[role="checkbox"]::after {
+  margin-top: 5px;
+}

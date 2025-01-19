@@ -91,3 +91,14 @@ export async function triggerFileDownload(markdown: string) {
   document.body.appendChild(a);
   a.click();
 }
+
+export async function deleteFile(id: string) {
+  const response = await fetch(`${baseURL}/file/${id}`, {
+    method: "DELETE",
+    headers: {
+      "Content-Type": "application/json",
+    },
+  });
+
+  return await response.json();
+}

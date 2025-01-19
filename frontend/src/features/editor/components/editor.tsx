@@ -28,11 +28,12 @@ import "@mdxeditor/editor/style.css";
 import { useEffect, useState } from "react";
 import {
   createFile,
+  deleteFile,
   editFile,
   getFile,
   triggerFileDownload,
 } from "../services";
-import { Plus, Printer, Save, Undo2 } from "lucide-react";
+import { Plus, Printer, Save, Trash2, Undo2 } from "lucide-react";
 import { useSearchParams } from "react-router";
 import { toast } from "react-toastify";
 import PacmanLoader from "react-spinners/PacmanLoader";
@@ -184,7 +185,72 @@ function App() {
         >
           {searchParams.get("editing") === null ? <Plus /> : <Save />}
         </div>
+        {searchParams.get("editing") === null ? (
+          <div></div>
+        ) : (
+          <div
+            onClick={() => {
+              const elem = document.getElementById("delete_modal");
+
+              if (elem) {
+                (
+                  document.getElementById("delete_modal") as HTMLDialogElement
+                )?.show();
+                elem.style.display = "flex";
+              }
+            }}
+            className="rounded-md bg-slate-600 text-white p-3 hover:bg-slate-900 cursor-pointer "
+          >
+            <Trash2 />
+          </div>
+        )}
       </div>
+      <dialog
+        onClick={() => {
+          const elem = document.getElementById("delete_modal");
+
+          if (elem) {
+            (
+              document.getElementById("delete_modal") as HTMLDialogElement
+            )?.close();
+            elem.style.display = "none";
+          }
+        }}
+        id="delete_modal"
+        className="absolute left-0 top-0 z-50 w-full h-full bg-gray-500/50 overflow-y-hidden overflow-x-hidden d-flex items-center justify-center"
+      >
+        <div
+          onClick={(e) => e.stopPropagation()}
+          className="bg-slate-50  text-black p-8 text-left rounded-md w-1/3"
+        >
+          <h2 className="text-xl">
+            Are you sure you want to delete this file?
+          </h2>
+          <h2 className="text-base mt-2">
+            This action is permanent and cannot be undone.
+          </h2>
+          <div className="flex flex-row gap-5 mt-5 justify-end">
+            <div
+              onClick={async () => {
+                await deleteFile(searchParams.get("editing") || "");
+                (
+                  document.getElementById("delete_modal") as HTMLDialogElement
+                )?.close();
+                const elem = document.getElementById("delete_modal");
+                if (elem) {
+                  elem.style.display = "none";
+                }
+                await setSearchParams({});
+                await setMarkdown("");
+                toast("Your note was successfully deleted!");
+              }}
+              className="rounded-md bg-slate-600 text-white p-3 hover:bg-slate-900 cursor-pointer"
+            >
+              <Trash2 />
+            </div>
+          </div>
+        </div>
+      </dialog>
     </div>
   );
 }
