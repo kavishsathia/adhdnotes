@@ -40,11 +40,14 @@ chrome.runtime.onMessage.addListener(async function (
       merged += values[i];
     }
 
-    const res = await fetch("http://localhost:8080/file/web-clip", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ text: merged }),
-    });
+    const res = await fetch(
+      "https://adhdnotes.s6wyfaw6z9q0r.ap-southeast-1.cs.amazonlightsail.com/file/web-clip",
+      {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ text: merged }),
+      }
+    );
 
     const parent = await res.json();
     sendResponse(parent);
