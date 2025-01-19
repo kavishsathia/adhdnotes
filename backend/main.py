@@ -343,6 +343,16 @@ def convert_to_pdf():
         return {"error": str(e)}, 500
 
 
+@app.route('/file/<id>', methods=['DELETE'])
+def delete_file(id: str):
+    with get_db() as db:
+        with db.cursor() as cursor:
+            cursor.execute("""
+                DELETE FROM File WHERE id = %s
+            """, (id,))
+            return {}
+
+
 if __name__ == '__main__':
     port = os.environ.get("PORT", 80)
     t = threading.Thread(target=bot.infinity_polling, daemon=True)
