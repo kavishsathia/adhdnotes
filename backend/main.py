@@ -111,6 +111,72 @@ def create_file():
             }
 
 
+@app.route('/file/web-clip', methods=['POST'])
+def create_web_clip():
+    data = request.json
+    with get_db() as db:
+        with db.cursor() as cursor:
+            client = openai.Client()
+
+            response = client.chat.completions.create(
+                model="gpt-4o-mini",
+                messages=[
+                    {
+                        "role": "user",
+                        "content": f"""
+                            Can you reformat the following text, include all the information.
+                            Do not include additional information. Use basic markdown.
+
+                            Text: {data["text"]}
+
+                            You must return a JSON object like this: {{ "markdown": "" }}
+                        """
+                    }
+                ],
+                response_format={"type": "json_object"}
+            )
+
+            markdown = json.loads(response.choices[0].message.content)[
+                "markdown"]
+
+            response = client.chat.completions.create(
+                model="gpt-4o-mini",
+                messages=[
+                    {
+                        "role": "user",
+                        "content": f"""
+                            Give the following text a succint title.
+
+                            Text: {markdown}
+
+                            You must return a JSON object like this: {{ "title": "" }}
+                        """
+                    }
+                ],
+                response_format={"type": "json_object"}
+            )
+
+            embedding_response = client.embeddings.create(
+                model="text-embedding-ada-002",
+                input=markdown
+            )
+
+            cursor.execute("""
+                SELECT id, name FROM File WHERE markdown IS NULL ORDER BY embedding <-> %s LIMIT 1
+            """, (json.dumps(embedding_response.data[0].embedding),))
+
+            parent = cursor.fetchall()
+
+            cursor.execute("""
+                INSERT INTO File VALUES (%s, %s, %s, %s, %s) 
+            """, (str(uuid.uuid4()), json.loads(response.choices[0].message.content)["title"], markdown, parent[0][0] if len(parent) else None, embedding_response.data[0].embedding))
+
+            return {
+                "success": True,
+                "parent": parent[0][1] if len(parent) else "Home"
+            }
+
+
 @app.route('/file/<id>', methods=['PUT'])
 def edit_file(id: str):
     data = request.json
