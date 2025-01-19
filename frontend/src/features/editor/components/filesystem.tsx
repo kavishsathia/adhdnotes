@@ -11,6 +11,7 @@ import { toast } from "react-toastify";
 function App() {
   const [notes, setNotes] = useState<AdhdFile[]>([]);
   const [folder, setFolder] = useState<AdhdFile | null>();
+  const [currentFolder, setCurrentFolder] = useState<AdhdFile | null>();
   const [name, setName] = useState<string>("");
   const [search, setSearch] = useState<string>("");
   const [searchParams, setSearchParams] = useSearchParams();
@@ -25,6 +26,7 @@ function App() {
       const folderId = searchParams.get("folder");
       if (folderId !== null) {
         const folder = await getFile(folderId);
+        setCurrentFolder(folder);
 
         if (folder.parentId === null) {
           setFolder({ id: "", name: "Home", markdown: null, parentId: null });
@@ -137,26 +139,39 @@ function App() {
           <Folder />
         </div>
       </div>
-      {folder && (
-        <div className="flex flex-row items-center gap-2 px-5 pt-3 cursor-pointer hover:underline">
-          <ArrowLeft />
-          <p
-            className="text-left inline-block"
-            onClick={() => {
-              if (folder.id === "") {
-                searchParams.delete("folder");
-              } else {
-                searchParams.set("folder", folder.id);
-              }
-              setSearchParams(searchParams);
-            }}
-          >
-            Back to {folder.name}
-          </p>
-        </div>
-      )}
+      <div className="flex flex-row justify-between px-5 pt-3 items-center">
+        {folder === undefined || folder === null ? (
+          <div></div>
+        ) : (
+          <div className="flex flex-row items-center gap-2 cursor-pointer hover:underline">
+            <ArrowLeft />
+            <p
+              className="text-left inline-block"
+              onClick={() => {
+                if (folder.id === "") {
+                  searchParams.delete("folder");
+                } else {
+                  searchParams.set("folder", folder.id);
+                }
+                setSearchParams(searchParams);
+                setCurrentFolder(null);
+              }}
+            >
+              Back to {folder.name}
+            </p>
+          </div>
+        )}
+        <p>Current directory: {currentFolder?.name ?? "Home"}</p>
+      </div>
 
-      <p className="text-2xl text-left p-5 pb-0">Folders</p>
+      {notes
+        .filter((x) => x.markdown === null)
+        .filter((x) => x.name.toLowerCase().includes(search.toLowerCase()))
+        .length === 0 ? (
+        <div></div>
+      ) : (
+        <p className="text-2xl text-left p-5 pb-0">Folders</p>
+      )}
       <div className="text-left w-full h-full grid grid-cols-3 gap-5 p-5">
         {notes
           .filter((x) => x.markdown === null)
@@ -165,7 +180,14 @@ function App() {
             return <Card file={note}></Card>;
           })}
       </div>
-      <p className="text-2xl text-left p-5 pb-0">Files</p>
+      {notes
+        .filter((x) => x.markdown !== null)
+        .filter((x) => x.name.toLowerCase().includes(search.toLowerCase()))
+        .length === 0 ? (
+        <div></div>
+      ) : (
+        <p className="text-2xl text-left p-5 pb-0">Files</p>
+      )}
       <div className="text-left w-full h-full grid grid-cols-3 gap-5 p-5">
         {notes
           .filter((x) => x.markdown !== null)
