@@ -6,6 +6,7 @@ import { createFolder, getFile, getFiles } from "../services";
 import { ArrowLeft, Folder, Plus } from "lucide-react";
 import { useSearchParams } from "react-router";
 import { PacmanLoader } from "react-spinners";
+import { toast } from "react-toastify";
 
 function App() {
   const [notes, setNotes] = useState<AdhdFile[]>([]);
@@ -90,9 +91,16 @@ function App() {
             <div
               onClick={async () => {
                 await createFolder(name, searchParams.get("folder") ?? null);
-                (
-                  document.getElementById("name_modal") as HTMLDialogElement
-                )?.close();
+                const elem = document.getElementById("name_modal");
+
+                if (elem) {
+                  (
+                    document.getElementById("name_modal") as HTMLDialogElement
+                  )?.close();
+                  elem.style.display = "none";
+                }
+                toast("Folder created successfully!");
+                await setSearchParams(searchParams);
               }}
               className="rounded-md bg-slate-600 text-white p-3 hover:bg-slate-900 cursor-pointer"
             >
