@@ -1,9 +1,12 @@
 import { AdhdFile } from "../types";
 
+const baseURL =
+  "https://adhdnotes.s6wyfaw6z9q0r.ap-southeast-1.cs.amazonlightsail.com";
+
 export async function createFile(
   markdown: string
 ): Promise<{ parent: string }> {
-  const response = await fetch("http://localhost:8080/file", {
+  const response = await fetch(`${baseURL}/file`, {
     method: "POST",
     headers: {
       "Content-Type": "application/json",
@@ -15,7 +18,7 @@ export async function createFile(
 }
 
 export function editFile(id: string, markdown: string) {
-  fetch(`http://localhost:8080/file/${id}`, {
+  fetch(`${baseURL}/file/${id}`, {
     method: "PUT",
     headers: {
       "Content-Type": "application/json",
@@ -25,7 +28,7 @@ export function editFile(id: string, markdown: string) {
 }
 
 export function createFolder(name: string, parentId: string | null) {
-  fetch("http://localhost:8080/folder", {
+  fetch(`${baseURL}/folder`, {
     method: "POST",
     headers: {
       "Content-Type": "application/json",
@@ -37,7 +40,7 @@ export function createFolder(name: string, parentId: string | null) {
 export async function getFiles(id: string | null): Promise<AdhdFile[]> {
   console.log(id);
   if (id) {
-    const response = await fetch(`http://localhost:8080/files?parent=${id}`, {
+    const response = await fetch(`${baseURL}/files?parent=${id}`, {
       method: "GET",
       headers: {
         "Content-Type": "application/json",
@@ -46,7 +49,7 @@ export async function getFiles(id: string | null): Promise<AdhdFile[]> {
 
     return await response.json();
   } else {
-    const response = await fetch(`http://localhost:8080/files`, {
+    const response = await fetch(`${baseURL}/files`, {
       method: "GET",
       headers: {
         "Content-Type": "application/json",
@@ -61,7 +64,7 @@ export async function getFile(id: string): Promise<AdhdFile> {
   if (id === "") {
     return { id: "", markdown: "", parentId: "", name: "Home" };
   }
-  const response = await fetch(`http://localhost:8080/file/${id}`, {
+  const response = await fetch(`${baseURL}/file/${id}`, {
     method: "GET",
     headers: {
       "Content-Type": "application/json",
@@ -72,7 +75,7 @@ export async function getFile(id: string): Promise<AdhdFile> {
 }
 
 export async function triggerFileDownload(markdown: string) {
-  const pdfResponse = await fetch("http://localhost:5000/convert-to-pdf", {
+  const pdfResponse = await fetch(`${baseURL}/convert-to-pdf`, {
     method: "POST",
     headers: {
       "Content-Type": "application/json",
